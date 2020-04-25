@@ -81,3 +81,15 @@ func (s *Server) Serve() {
 		}
 	}()
 }
+
+// DisconnectAll provides disconnecting of all clients
+func (s *Server) DisconnectAll() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for id := range s.peers {
+		if s.peers[id] != nil {
+			s.peers[id].Close()
+			s.peers[id] = nil
+		}
+	}
+}

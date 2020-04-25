@@ -93,3 +93,44 @@ func (s *Server) DisconnectAll() {
 		}
 	}
 }
+
+// Shutdown provides shutdownling of the server
+func (s *Server) Shutdown() {
+	s.cm.Stop()
+	close(s.quit)
+	s.listener.Close()
+	s.wg.Wait()
+}
+
+// GetListenAddr returns net address
+func (s *Server) GetListenAddr() net.Addr {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.listener.Addr()
+}
+
+// ConnectToPeer provides connecting to the peer
+func (s *Server) ConnectToPeer(peerID int, addr net.Addr) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.peers[peerID] == nil {
+		client, err := rpc.Dial(addr.Network(), addr.String())
+		if err != nil {
+			return err
+		}
+		s.peers[peerID] = client
+	}
+	return nil
+}
+
+// DisconnectPeer disconnects this server from the peer identified by peerId.
+func (s *Server) DisconnectPeer(peerID int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.peers[peerID] != nil {
+		err := s.peers[peerID].Close()
+		s.peers[peerID] = nil
+		return err
+	}
+	return nil
+}
